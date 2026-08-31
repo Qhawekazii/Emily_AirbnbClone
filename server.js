@@ -9,6 +9,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 // Load environment variables
 dotenv.config();
@@ -38,19 +39,9 @@ app.get('/', (req, res) => {
   res.json({ message: 'Airbnb Clone API is running', status: 'OK' });
 });
 
-// ─── 404 Handler ──────────────────────────────────────────────────────────────
-app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
-});
-
-// ─── Global Error Handler ─────────────────────────────────────────────────────
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({
-    message: err.message || 'Internal Server Error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
-  });
-});
+// ─── 404 + Global Error Handlers ─────────────────────────────────────────────
+app.use(notFound);
+app.use(errorHandler);
 
 // ─── Database + Server Start ──────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
