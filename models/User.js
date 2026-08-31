@@ -1,7 +1,8 @@
 /**
  * models/User.js
- * Mongoose schema for users (admins/hosts).
+ * Mongoose schema for users (admins/hosts/guests).
  * Passwords are hashed with bcryptjs before saving.
+ * Email is normalised to lowercase on save.
  */
 
 const mongoose = require('mongoose');
@@ -13,6 +14,8 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Username is required'],
       trim: true,
+      minlength: [2, 'Username must be at least 2 characters'],
+      maxlength: [50, 'Username cannot exceed 50 characters'],
     },
     email: {
       type: String,
@@ -26,6 +29,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Password is required'],
       minlength: [6, 'Password must be at least 6 characters'],
+      select: false, // Never return password by default
     },
     role: {
       type: String,
@@ -47,6 +51,14 @@ userSchema.pre('save', async function (next) {
 // Compare entered password with stored hash
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Remove sensitive fields from JSON output
+userSchema.methods.toJSON = function () {
+  const obj = this.toObject();
+  delete obj.password;
+  delete obj.__v;
+  return obj;
 };
 
 module.exports = mongoose.model('User', userSchema);

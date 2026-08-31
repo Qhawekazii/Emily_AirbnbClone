@@ -72,8 +72,8 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    // Find user and verify password
-    const user = await User.findOne({ email });
+    // Find user and verify password — use .select('+password') since field has select:false
+    const user = await User.findOne({ email }).select('+password');
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
