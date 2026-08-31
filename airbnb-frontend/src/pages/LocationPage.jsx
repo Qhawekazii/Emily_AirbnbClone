@@ -28,6 +28,7 @@ const LocationPage = () => {
   const [listings, setListings] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [activeFilter, setActiveFilter] = useState('All');
+  const [sortBy, setSortBy] = useState('default'); // 'default' | 'price-asc' | 'price-desc' | 'rating'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -51,11 +52,14 @@ const LocationPage = () => {
 
   useEffect(() => { fetchListings(); }, [fetchListings]);
 
-  // Apply type filter
+  // Apply type filter and sort
   useEffect(() => {
-    if (activeFilter === 'All') setFiltered(listings);
-    else setFiltered(listings.filter((l) => l.type === activeFilter));
-  }, [activeFilter, listings]);
+    let result = activeFilter === 'All' ? [...listings] : listings.filter((l) => l.type === activeFilter);
+    if (sortBy === 'price-asc') result.sort((a, b) => a.price - b.price);
+    else if (sortBy === 'price-desc') result.sort((a, b) => b.price - a.price);
+    else if (sortBy === 'rating') result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    setFiltered(result);
+  }, [activeFilter, listings, sortBy]);
 
   return (
     <div className="location-page">
@@ -71,17 +75,30 @@ const LocationPage = () => {
         </div>
 
         {/* Filter bar */}
-        <div className="filter-bar" role="group" aria-label="Filter by accommodation type">
-          {FILTER_TYPES.map((type) => (
-            <button
-              key={type}
-              className={`filter-pill ${activeFilter === type ? 'active' : ''}`}
-              onClick={() => setActiveFilter(type)}
-              aria-pressed={activeFilter === type}
-            >
-              {type}
-            </button>
-          ))}
+        <div className="filter-sort-bar">
+          <div className="filter-bar" role="group" aria-label="Filter by accommodation type">
+            {FILTER_TYPES.map((type) => (
+              <button
+                key={type}
+                className={`filter-pill ${activeFilter === type ? 'active' : ''}`}
+                onClick={() => setActiveFilter(type)}
+                aria-pressed={activeFilter === type}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
+          <select
+            className="sort-select"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            aria-label="Sort listings"
+          >
+            <option value="default">Sort: Default</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="rating">Top Rated</option>
+          </select>
         </div>
 
         {/* Content */}

@@ -6,12 +6,11 @@
 .location-name { color: var(--airbnb-red); }
 .location-sub { color: var(--airbnb-gray); font-size: 0.9rem; margin-top: 4px; }
 
+.filter-sort-bar { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid var(--airbnb-border); flex-wrap: wrap; }
+
 /* Filter bar */
 .filter-bar {
   display: flex; gap: 8px; flex-wrap: wrap;
-  margin-bottom: 32px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--airbnb-border);
 }
 .filter-pill {
   padding: 8px 18px;
@@ -27,6 +26,14 @@
   color: white;
   border-color: var(--airbnb-dark);
 }
+
+.sort-select {
+  padding: 8px 14px; border: 1.5px solid var(--airbnb-border);
+  border-radius: var(--radius-sm); font-size: 0.88rem; font-weight: 600;
+  background: white; cursor: pointer; flex-shrink: 0;
+  transition: border-color 0.15s;
+}
+.sort-select:focus { outline: none; border-color: var(--airbnb-dark); }
 
 /* Cards */
 .location-cards { display: flex; flex-direction: column; gap: 24px; }
