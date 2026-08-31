@@ -6,6 +6,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header/Header';
 import Footer from '../components/Footer/Footer';
+import { SkeletonList } from '../components/SkeletonCard/SkeletonCard';
 import api from '../api/axios';
 import './LocationPage.css';
 
@@ -87,7 +88,7 @@ const LocationPage = () => {
         {error && <div className="location-error">{error}</div>}
 
         {loading ? (
-          <div className="spinner-wrap"><div className="spinner" /></div>
+          <SkeletonList count={4} />
         ) : filtered.length === 0 ? (
           <div className="location-empty">
             <p>🏠</p>
