@@ -9,6 +9,7 @@ import HomePage from './pages/HomePage';
 import LocationPage from './pages/LocationPage';
 import LocationDetailsPage from './pages/LocationDetailsPage';
 import NotFoundPage from './pages/NotFoundPage';
+import UserReservationsPage from './pages/UserReservationsPage';
 
 const ScrollToTop = () => { useScrollToTop(); return null; };
 
@@ -19,6 +20,7 @@ const App = () => (
       <Route path="/" element={<HomePage />} />
       <Route path="/locations/:location" element={<LocationPage />} />
       <Route path="/listing/:id" element={<LocationDetailsPage />} />
+      <Route path="/reservations" element={<UserReservationsPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   </AuthProvider>
