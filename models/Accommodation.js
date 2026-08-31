@@ -24,11 +24,13 @@ const accommodationSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Title is required'],
       trim: true,
+      index: true, // speed up title searches
     },
     location: {
       type: String,
       required: [true, 'Location is required'],
       trim: true,
+      index: true, // most common filter field
     },
     description: {
       type: String,
@@ -52,6 +54,7 @@ const accommodationSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'Price per night is required'],
       min: [1, 'Price must be positive'],
+      index: true, // enable price range queries
     },
     guests: {
       type: Number,
