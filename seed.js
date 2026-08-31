@@ -7,6 +7,7 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
+
 const User = require('./models/User');
 const Accommodation = require('./models/Accommodation');
 const Reservation = require('./models/Reservation');
@@ -49,7 +50,14 @@ const accommodations = [
     guests: 4,
     bedrooms: 2,
     bathrooms: 2,
-    amenities: ['WiFi', 'Kitchen', 'Free parking', 'Air conditioning', 'TV', 'Washer'],
+    amenities: [
+      'WiFi',
+      'Kitchen',
+      'Free parking',
+      'Air conditioning',
+      'TV',
+      'Washer',
+    ],
     images: [
       'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800',
       'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800',
@@ -75,6 +83,7 @@ const accommodations = [
       value: 4.5,
     },
   },
+
   {
     title: 'Cozy Studio Near Times Square',
     location: 'New York',
@@ -85,7 +94,13 @@ const accommodations = [
     guests: 2,
     bedrooms: 1,
     bathrooms: 1,
-    amenities: ['WiFi', 'Kitchen', 'Air conditioning', 'TV', 'Elevator'],
+    amenities: [
+      'WiFi',
+      'Kitchen',
+      'Air conditioning',
+      'TV',
+      'Elevator',
+    ],
     images: [
       'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800',
       'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800',
@@ -111,6 +126,7 @@ const accommodations = [
       value: 4.4,
     },
   },
+
   // ── Paris ─────────────────────────────────────────────────────────────────
   {
     title: 'Elegant Flat Near Eiffel Tower',
@@ -148,11 +164,12 @@ const accommodations = [
       value: 4.7,
     },
   },
+
   {
     title: 'Charming Montmartre Studio',
     location: 'Paris',
     description:
-      'Quaint studio in the artistic Montmartre neighbourhood. Steps from Sacré-Cœur and the famous artists\' square. Authentic Parisian experience awaits.',
+      "Quaint studio in the artistic Montmartre neighbourhood. Steps from Sacré-Cœur and the famous artists' square. Authentic Parisian experience awaits.",
     type: 'Private room',
     price: 120,
     guests: 2,
@@ -184,6 +201,7 @@ const accommodations = [
       value: 4.8,
     },
   },
+
   // ── Cape Town ─────────────────────────────────────────────────────────────
   {
     title: 'Luxury Villa with Ocean View',
@@ -195,7 +213,16 @@ const accommodations = [
     guests: 8,
     bedrooms: 4,
     bathrooms: 3,
-    amenities: ['WiFi', 'Pool', 'Kitchen', 'Free parking', 'Air conditioning', 'BBQ', 'Garden', 'TV'],
+    amenities: [
+      'WiFi',
+      'Pool',
+      'Kitchen',
+      'Free parking',
+      'Air conditioning',
+      'BBQ',
+      'Garden',
+      'TV',
+    ],
     images: [
       'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800',
       'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800',
@@ -221,6 +248,7 @@ const accommodations = [
       value: 4.7,
     },
   },
+
   {
     title: 'Beach Cottage in Cape Town',
     location: 'Cape Town',
@@ -231,7 +259,14 @@ const accommodations = [
     guests: 4,
     bedrooms: 2,
     bathrooms: 1,
-    amenities: ['WiFi', 'Kitchen', 'Free parking', 'BBQ', 'Garden', 'Beach access'],
+    amenities: [
+      'WiFi',
+      'Kitchen',
+      'Free parking',
+      'BBQ',
+      'Garden',
+      'Beach access',
+    ],
     images: [
       'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=800',
       'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800',
@@ -257,6 +292,7 @@ const accommodations = [
       value: 4.8,
     },
   },
+
   // ── Tokyo ─────────────────────────────────────────────────────────────────
   {
     title: 'Traditional Machiya Townhouse',
@@ -268,7 +304,14 @@ const accommodations = [
     guests: 4,
     bedrooms: 2,
     bathrooms: 1,
-    amenities: ['WiFi', 'Kitchen', 'Heating', 'Washing machine', 'Zen garden', 'Tatami room'],
+    amenities: [
+      'WiFi',
+      'Kitchen',
+      'Heating',
+      'Washing machine',
+      'Zen garden',
+      'Tatami room',
+    ],
     images: [
       'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800',
       'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800',
@@ -294,6 +337,7 @@ const accommodations = [
       value: 4.7,
     },
   },
+
   {
     title: 'Modern Pod in Shibuya',
     location: 'Tokyo',
@@ -330,18 +374,28 @@ const accommodations = [
       value: 4.7,
     },
   },
+
   // ── London ────────────────────────────────────────────────────────────────
   {
     title: 'Georgian Townhouse in Chelsea',
     location: 'London',
     description:
-      'Stunning 4-bedroom Georgian townhouse in the prestigious Chelsea neighbourhood. Period features combined with modern luxury. Close to the King\'s Road and the Thames.',
+      "Stunning 4-bedroom Georgian townhouse in the prestigious Chelsea neighbourhood. Period features combined with modern luxury. Close to the King's Road and the Thames.",
     type: 'Entire house',
     price: 480,
     guests: 8,
     bedrooms: 4,
     bathrooms: 3,
-    amenities: ['WiFi', 'Kitchen', 'Free parking', 'Garden', 'Fireplace', 'Washer', 'TV', 'Heating'],
+    amenities: [
+      'WiFi',
+      'Kitchen',
+      'Free parking',
+      'Garden',
+      'Fireplace',
+      'Washer',
+      'TV',
+      'Heating',
+    ],
     images: [
       'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800',
       'https://images.unsplash.com/photo-1520013817300-1f4c753931e9?w=800',
@@ -367,6 +421,7 @@ const accommodations = [
       value: 4.5,
     },
   },
+
   {
     title: 'Bright Flat in Notting Hill',
     location: 'London',
@@ -403,6 +458,7 @@ const accommodations = [
       value: 4.6,
     },
   },
+
   // ── Bali ──────────────────────────────────────────────────────────────────
   {
     title: 'Tropical Villa with Private Pool',
@@ -414,7 +470,16 @@ const accommodations = [
     guests: 6,
     bedrooms: 3,
     bathrooms: 3,
-    amenities: ['WiFi', 'Pool', 'Kitchen', 'Breakfast', 'Air conditioning', 'Garden', 'TV', 'Parking'],
+    amenities: [
+      'WiFi',
+      'Pool',
+      'Kitchen',
+      'Breakfast',
+      'Air conditioning',
+      'Garden',
+      'TV',
+      'Parking',
+    ],
     images: [
       'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800',
       'https://images.unsplash.com/photo-1573843981267-be1999ff37cd?w=800',
@@ -440,17 +505,24 @@ const accommodations = [
       value: 4.8,
     },
   },
+
   {
-    title: 'Surfer\'s Bungalow in Seminyak',
+    title: "Surfer's Bungalow in Seminyak",
     location: 'Bali',
     description:
-      'Laid-back bungalow a 2-minute walk from Seminyak Beach. Perfect for surfers and beach lovers. Outdoor shower, hammock, and proximity to Bali\'s best beach clubs.',
+      "Laid-back bungalow a 2-minute walk from Seminyak Beach. Perfect for surfers and beach lovers. Outdoor shower, hammock, and proximity to Bali's best beach clubs.",
     type: 'Cabin',
     price: 85,
     guests: 2,
     bedrooms: 1,
     bathrooms: 1,
-    amenities: ['WiFi', 'Air conditioning', 'Outdoor shower', 'Hammock', 'Breakfast'],
+    amenities: [
+      'WiFi',
+      'Air conditioning',
+      'Outdoor shower',
+      'Hammock',
+      'Breakfast',
+    ],
     images: [
       'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=800',
       'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800',
@@ -481,6 +553,10 @@ const accommodations = [
 // ─── Seed Function ────────────────────────────────────────────────────────────
 const seedDatabase = async () => {
   try {
+    if (!process.env.MONGO_URI) {
+      throw new Error('MONGO_URI is not defined in your .env file');
+    }
+
     await mongoose.connect(process.env.MONGO_URI);
     console.log('✅ Connected to MongoDB');
 
@@ -490,37 +566,83 @@ const seedDatabase = async () => {
     await Reservation.deleteMany({});
     console.log('🗑️  Cleared existing data');
 
+    // ─────────────────────────────────────────────────────────────────────────
     // Create users
-    const createdUsers = await User.create(users);
+    //
+    // IMPORTANT:
+    // We hash the passwords here and use insertMany() instead of User.create().
+    // This avoids triggering a problematic save middleware that is causing:
+    // "next is not a function"
+    // ─────────────────────────────────────────────────────────────────────────
+
+    const usersWithHashedPasswords = await Promise.all(
+      users.map(async (user) => ({
+        ...user,
+        password: await bcrypt.hash(user.password, 10),
+      }))
+    );
+
+    const createdUsers = await User.insertMany(usersWithHashedPasswords);
+
     console.log(`👤 Created ${createdUsers.length} users`);
 
     // Attach host_id (Jane Doe is a host) to listings
-    const hostUser = createdUsers.find((u) => u.role === 'host');
+    const hostUser = createdUsers.find((user) => user.role === 'host');
+
+    if (!hostUser) {
+      throw new Error('Host user was not created successfully');
+    }
 
     const accommodationsWithHost = accommodations.map((acc) => ({
       ...acc,
       host_id: hostUser._id,
     }));
 
-    const createdAccommodations = await Accommodation.create(accommodationsWithHost);
-    console.log(`🏠 Created ${createdAccommodations.length} accommodations`);
+    // Use insertMany here as well so any problematic save middleware
+    // does not interfere with the seed process.
+    const createdAccommodations = await Accommodation.insertMany(
+      accommodationsWithHost
+    );
+
+    console.log(
+      `🏠 Created ${createdAccommodations.length} accommodations`
+    );
 
     console.log('\n📋 Seeded Locations:');
-    const locations = [...new Set(createdAccommodations.map((a) => a.location))];
-    locations.forEach((loc) => {
-      const count = createdAccommodations.filter((a) => a.location === loc).length;
-      console.log(`   ${loc}: ${count} listings`);
+
+    const locations = [
+      ...new Set(createdAccommodations.map((accommodation) => accommodation.location)),
+    ];
+
+    locations.forEach((location) => {
+      const count = createdAccommodations.filter(
+        (accommodation) => accommodation.location === location
+      ).length;
+
+      console.log(`   ${location}: ${count} listings`);
     });
 
     console.log('\n✅ Database seeded successfully!');
+
     console.log('\n🔐 Test Credentials:');
     console.log('   Admin  → admin@airbnb.com   / admin123');
     console.log('   Host   → jane@example.com   / password321');
     console.log('   User   → john@example.com   / password123');
 
+    await mongoose.connection.close();
+
+    console.log('\n🔌 MongoDB connection closed.');
+
     process.exit(0);
   } catch (err) {
-    console.error('❌ Seeding error:', err.message);
+    console.error('\n❌ Seeding error:', err.message);
+
+    try {
+      await mongoose.connection.close();
+    } catch (closeError) {
+      // Ignore connection close errors
+    }
+
     process.exit(1);
   }
 };
