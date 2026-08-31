@@ -1,0 +1,56 @@
+.reservations-page { padding: 40px 24px; }
+.reservations-header { margin-bottom: 28px; }
+.reservations-header h1 { font-size: 1.8rem; font-weight: 700; }
+.reservations-header p { color: var(--airbnb-gray); margin-top: 4px; }
+
+.reservations-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--airbnb-border);
+  border-radius: var(--radius);
+}
+.reservations-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+.reservations-table th {
+  background: var(--airbnb-light);
+  padding: 12px 14px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--airbnb-gray);
+  border-bottom: 1px solid var(--airbnb-border);
+}
+.reservations-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--airbnb-border);
+  vertical-align: middle;
+}
+.reservations-table tr:last-child td { border-bottom: none; }
+.reservations-table tr:hover td { background: #fafafa; }
+
+.res-listing { display: flex; align-items: center; gap: 10px; }
+.res-thumb { width: 48px; height: 36px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+.res-title { font-weight: 600; font-size: 0.88rem; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.res-location { font-size: 0.78rem; color: var(--airbnb-gray); }
+.total-cell { font-weight: 700; color: var(--airbnb-red); }
+
+.status-badge {
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.status-confirmed { background: #eafaf1; color: #1e8449; }
+.status-pending   { background: #fef9e7; color: #b7950b; }
+.status-cancelled { background: #fdecea; color: #c0392b; }
+
+.action-btn { font-size: 0.8rem !important; padding: 5px 12px !important; }
+
+.empty-state { text-align: center; padding: 80px 24px; color: var(--airbnb-gray); }
+.empty-state p:first-child { font-size: 3rem; margin-bottom: 12px; }
+.empty-state h3 { font-size: 1.2rem; color: var(--airbnb-dark); margin-bottom: 8px; }

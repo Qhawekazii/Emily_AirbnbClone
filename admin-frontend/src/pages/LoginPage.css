@@ -1,0 +1,43 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fff0f3 0%, #fff 60%);
+  padding: 24px;
+}
+
+.login-card {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 48px 40px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.login-logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.login-logo svg { width: 48px; height: 48px; margin: 0 auto 12px; }
+.login-logo h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
+.login-logo p { color: var(--airbnb-gray); font-size: 0.95rem; }
+
+.login-submit {
+  width: 100%;
+  padding: 14px;
+  font-size: 1rem;
+  margin-top: 8px;
+}
+
+.login-hint {
+  margin-top: 24px;
+  padding: 16px;
+  background: var(--airbnb-light);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--airbnb-gray);
+  text-align: center;
+}
+.login-hint p:first-child { color: var(--airbnb-dark); margin-bottom: 4px; }

@@ -1,0 +1,140 @@
+/* ── Hero ────────────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  height: 600px;
+  display: flex; align-items: center;
+  overflow: hidden;
+  margin-top: calc(-1 * var(--header-height)); /* overlap header */
+}
+.hero-bg {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  transform: scale(1.05);
+  transition: transform 8s ease;
+}
+.hero:hover .hero-bg { transform: scale(1); }
+.hero-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to right, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);
+}
+.hero-content {
+  position: relative; z-index: 1;
+  color: white;
+  padding-top: var(--header-height);
+  max-width: 600px;
+}
+.hero-content h1 {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 800; line-height: 1.1;
+  margin-bottom: 16px;
+}
+.hero-content p {
+  font-size: 1.1rem; margin-bottom: 28px;
+  opacity: 0.92; max-width: 460px;
+}
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.hero-cta { font-size: 1rem; padding: 14px 28px; }
+
+/* ── Sections ────────────────────────────────────────────────────────────── */
+.section { padding: 56px 0; }
+
+/* ── Inspiration ─────────────────────────────────────────────────────────── */
+.inspiration-section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 24px; }
+.inspiration-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.inspiration-card {
+  display: flex; align-items: center; gap: 14px;
+  background: none; border: none; text-align: left;
+  padding: 8px; border-radius: var(--radius-sm);
+  transition: background 0.15s; cursor: pointer;
+}
+.inspiration-card:hover { background: var(--airbnb-light); }
+.inspiration-card img {
+  width: 72px; height: 72px; border-radius: 10px;
+  object-fit: cover; flex-shrink: 0;
+}
+.insp-info strong { display: block; font-size: 0.95rem; font-weight: 700; }
+.insp-info span { font-size: 0.82rem; color: var(--airbnb-gray); }
+
+/* ── Experiences ─────────────────────────────────────────────────────────── */
+.experiences-section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 24px; }
+.experiences-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.experience-card {
+  height: 400px; border-radius: var(--radius);
+  background-size: cover; background-position: center;
+  position: relative; overflow: hidden;
+}
+.exp-card-content {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 32px;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%);
+  color: white;
+}
+.exp-card-content h3 { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+.exp-card-content p { font-size: 0.9rem; opacity: 0.9; margin-bottom: 16px; max-width: 300px; }
+
+/* ── ShopAirbnb ──────────────────────────────────────────────────────────── */
+.shopairbnb-section { background: var(--airbnb-light); padding: 56px 0; }
+.shopairbnb-inner {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 48px; align-items: center;
+}
+.shop-eyebrow { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--airbnb-red); }
+.shop-text h2 { font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 800; margin: 10px 0 16px; }
+.shop-text p { color: var(--airbnb-gray); margin-bottom: 24px; font-size: 1rem; }
+.shop-image img { width: 100%; border-radius: var(--radius); box-shadow: var(--shadow-md); }
+
+/* ── Future Getaways ─────────────────────────────────────────────────────── */
+.getaways-section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; }
+.getaways-tabs {
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--airbnb-border);
+  margin-bottom: 28px;
+}
+.getaway-tab {
+  background: none; border: none;
+  padding: 12px 20px;
+  font-size: 0.9rem; font-weight: 600;
+  color: var(--airbnb-gray);
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s; cursor: pointer;
+}
+.getaway-tab:hover { color: var(--airbnb-dark); }
+.getaway-tab.active { color: var(--airbnb-dark); border-bottom-color: var(--airbnb-dark); }
+
+.getaway-panel { animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.getaway-list {
+  list-style: none;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.getaway-item {
+  padding: 14px 16px;
+  border: 1px solid var(--airbnb-border);
+  border-radius: var(--radius-sm);
+  transition: box-shadow 0.15s;
+}
+.getaway-item:hover { box-shadow: var(--shadow-sm); }
+.getaway-name { font-size: 0.92rem; font-weight: 700; }
+.getaway-loc { font-size: 0.82rem; color: var(--airbnb-gray); margin-top: 2px; }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .inspiration-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .hero { height: 480px; }
+  .inspiration-grid { grid-template-columns: repeat(2, 1fr); }
+  .experiences-grid { grid-template-columns: 1fr; }
+  .shopairbnb-inner { grid-template-columns: 1fr; }
+  .shop-image { order: -1; }
+}
+@media (max-width: 480px) {
+  .inspiration-grid { grid-template-columns: 1fr; }
+  .getaways-tabs { overflow-x: auto; }
+  .getaway-tab { white-space: nowrap; }
+}

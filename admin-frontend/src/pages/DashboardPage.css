@@ -1,0 +1,68 @@
+.dashboard { padding: 40px 24px; }
+
+.dashboard-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 36px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.dashboard-welcome h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 6px; }
+.dashboard-welcome p { color: var(--airbnb-gray); }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 48px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--airbnb-border);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.stat-icon { font-size: 2rem; }
+.stat-value { display: block; font-size: 2rem; font-weight: 700; color: var(--card-color, var(--airbnb-red)); }
+.stat-label { display: block; font-size: 0.85rem; color: var(--airbnb-gray); margin-top: 2px; }
+
+.recent-section {}
+.recent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.recent-header h2 { font-size: 1.3rem; font-weight: 700; }
+.view-all { color: var(--airbnb-red); font-size: 0.9rem; font-weight: 600; }
+.view-all:hover { text-decoration: underline; }
+
+.recent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+.recent-card {
+  border: 1px solid var(--airbnb-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.recent-card:hover { box-shadow: var(--shadow-md); }
+.recent-img { height: 160px; overflow: hidden; }
+.recent-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+.recent-card:hover .recent-img img { transform: scale(1.05); }
+.recent-body { padding: 14px; }
+.recent-body h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recent-body p { font-size: 0.85rem; color: var(--airbnb-gray); margin-bottom: 4px; }
+.recent-price { font-size: 1rem !important; font-weight: 700 !important; color: var(--airbnb-dark) !important; }
+.recent-price span { font-weight: 400; color: var(--airbnb-gray) !important; }
+.recent-actions { margin-top: 10px; }
