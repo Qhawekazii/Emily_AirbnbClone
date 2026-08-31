@@ -37,8 +37,10 @@ const LocationPage = () => {
     setError('');
     try {
       const res = await api.get(`/accommodations?location=${encodeURIComponent(decodedLocation)}`);
-      setListings(res.data);
-      setFiltered(res.data);
+      // Handle both paginated {accommodations:[]} and plain array responses
+      const data = Array.isArray(res.data) ? res.data : (res.data.accommodations || []);
+      setListings(data);
+      setFiltered(data);
     } catch {
       setError('Failed to load listings.');
     } finally {

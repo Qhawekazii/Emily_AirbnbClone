@@ -21,7 +21,8 @@ const ViewListingsPage = () => {
     setError('');
     try {
       const res = await api.get('/accommodations');
-      setListings(res.data);
+      const data = Array.isArray(res.data) ? res.data : (res.data.accommodations || []);
+      setListings(data);
     } catch (err) {
       setError('Failed to load listings. Please try again.');
     } finally {

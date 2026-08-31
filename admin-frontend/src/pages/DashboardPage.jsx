@@ -30,13 +30,16 @@ const DashboardPage = () => {
       try {
         const [listingsRes, reservationsRes] = await Promise.all([
           api.get('/accommodations'),
-          api.get('/reservations/host').catch(() => ({ data: [] })),
+          api.get('/reservations/host').catch(() => ({ data: { accommodations: [] } })),
         ]);
+        // Handle both paginated {accommodations:[]} and plain array responses
+        const listings = Array.isArray(listingsRes.data) ? listingsRes.data : (listingsRes.data.accommodations || []);
+        const reservations = Array.isArray(reservationsRes.data) ? reservationsRes.data : (reservationsRes.data.accommodations || []);
         setStats({
-          listings: listingsRes.data.length,
-          reservations: reservationsRes.data.length,
+          listings: listings.length,
+          reservations: reservations.length,
         });
-        setRecentListings(listingsRes.data.slice(0, 4));
+        setRecentListings(listings.slice(0, 4));
       } catch (err) {
         console.error('Dashboard fetch error:', err);
       } finally {

@@ -11,30 +11,49 @@ const fs = require('fs');
 // ─── GET /api/accommodations ──────────────────────────────────────────────────
 /**
  * Get all accommodation listings.
- * Supports optional query: ?location=Paris&type=Villa&minPrice=100&maxPrice=500
+ * Supports optional query params:
+ *   ?location=Paris  — filter by city (case-insensitive)
+ *   ?type=Villa      — filter by accommodation type
+ *   ?minPrice=100    — minimum price per night
+ *   ?maxPrice=500    — maximum price per night
+ *   ?page=1          — page number (default 1)
+ *   ?limit=10        — results per page (default 20, max 50)
  */
 const getAllAccommodations = async (req, res) => {
   try {
     const filter = {};
-    const { location, type, minPrice, maxPrice } = req.query;
+    const { location, type, minPrice, maxPrice, page = 1, limit = 20 } = req.query;
 
-    if (location) {
-      filter.location = { $regex: location, $options: 'i' };
-    }
-    if (type) {
-      filter.type = type;
-    }
+    if (location) filter.location = { $regex: location, $options: 'i' };
+    if (type) filter.type = type;
     if (minPrice || maxPrice) {
       filter.price = {};
       if (minPrice) filter.price.$gte = Number(minPrice);
       if (maxPrice) filter.price.$lte = Number(maxPrice);
     }
 
-    const accommodations = await Accommodation.find(filter)
-      .populate('host_id', 'username email')
-      .sort({ createdAt: -1 });
+    const pageNum = Math.max(1, parseInt(page, 10));
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10)));
+    const skip = (pageNum - 1) * limitNum;
 
-    res.status(200).json(accommodations);
+    const [accommodations, total] = await Promise.all([
+      Accommodation.find(filter)
+        .populate('host_id', 'username email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum),
+      Accommodation.countDocuments(filter),
+    ]);
+
+    res.status(200).json({
+      accommodations,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        pages: Math.ceil(total / limitNum),
+      },
+    });
   } catch (err) {
     res.status(500).json({ message: 'Error fetching accommodations', error: err.message });
   }
