@@ -12,16 +12,19 @@ const reservationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Accommodation',
       required: [true, 'Accommodation reference is required'],
+      index: true,
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: [true, 'User reference is required'],
+      index: true,
     },
     // Stored so reservation stays accurate even if listing changes
     host_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
+      index: true,
     },
     checkIn: {
       type: Date,
