@@ -43,10 +43,26 @@ app.use('/api/accommodations', accommodationRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/users', userRoutes);
 
-// Health check
-app.get('/', (req, res) => {
-  res.json({ message: 'Airbnb Clone API is running', status: 'OK' });
-});
+// ─── Serve React frontends in production ─────────────────────────────────────
+// The admin dashboard is served at /admin, the public site at /
+if (process.env.NODE_ENV === 'production') {
+  // Serve admin frontend static files at /admin
+  app.use('/admin', express.static(path.join(__dirname, 'admin-frontend/dist')));
+  app.get('/admin/*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin-frontend/dist/index.html'));
+  });
+
+  // Serve public Airbnb frontend static files at /
+  app.use(express.static(path.join(__dirname, 'airbnb-frontend/dist')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'airbnb-frontend/dist/index.html'));
+  });
+} else {
+  // Development: health check at root
+  app.get('/', (req, res) => {
+    res.json({ message: 'Airbnb Clone API is running', status: 'OK' });
+  });
+}
 
 // ─── Error Handlers ───────────────────────────────────────────────────────────
 app.use(notFound);
