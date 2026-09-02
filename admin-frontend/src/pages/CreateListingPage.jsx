@@ -1,10 +1,11 @@
 /**
  * pages/CreateListingPage.jsx
  * Form to create a new property listing.
- * Includes full validation, image URL input, and amenity selection.
+ * Supports both file upload (multipart/form-data via multer) and
+ * fallback URL input. Includes full validation and amenity selection.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import './ListingForm.css';
@@ -24,17 +25,22 @@ const initialState = {
   title: '', location: '', description: '', type: 'Entire apartment',
   price: '', guests: '1', bedrooms: '1', bathrooms: '1',
   weeklyDiscount: '0', cleaningFee: '0', serviceFee: '0', occupancyTaxes: '0',
-  host: '', images: '', amenities: [], enhancedCleaning: false, selfCheckIn: false,
+  host: '', imageUrls: '', amenities: [], enhancedCleaning: false, selfCheckIn: false,
 };
 
 const CreateListingPage = () => {
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
   const [form, setForm] = useState(initialState);
+  const [imageFiles, setImageFiles] = useState([]); // actual File objects
+  const [imagePreviews, setImagePreviews] = useState([]); // preview URLs
+  const [uploadMode, setUploadMode] = useState('file'); // 'file' | 'url'
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // ── Validation ──────────────────────────────────────────────────────────────
   const validate = () => {
     const e = {};
     if (!form.title.trim()) e.title = 'Title is required';
@@ -42,14 +48,47 @@ const CreateListingPage = () => {
     if (!form.description.trim()) e.description = 'Description is required';
     if (!form.price || Number(form.price) <= 0) e.price = 'Price must be a positive number';
     if (!form.guests || Number(form.guests) < 1) e.guests = 'At least 1 guest required';
+    if (uploadMode === 'file' && imageFiles.length === 0 && !form.imageUrls.trim()) {
+      e.images = 'Please upload at least one image or provide an image URL';
+    }
     return e;
   };
 
+  // ── Handlers ────────────────────────────────────────────────────────────────
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
     setServerError('');
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    // Validate file types client-side
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const invalid = files.filter((f) => !allowed.includes(f.type));
+    if (invalid.length > 0) {
+      setErrors((prev) => ({ ...prev, images: 'Only JPEG, PNG, WebP and GIF images are allowed' }));
+      return;
+    }
+    if (files.some((f) => f.size > 5 * 1024 * 1024)) {
+      setErrors((prev) => ({ ...prev, images: 'Each image must be under 5 MB' }));
+      return;
+    }
+
+    setImageFiles(files);
+    setImagePreviews(files.map((f) => URL.createObjectURL(f)));
+    if (errors.images) setErrors((prev) => ({ ...prev, images: '' }));
+  };
+
+  const removeImage = (index) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const toggleAmenity = (amenity) => {
@@ -61,6 +100,7 @@ const CreateListingPage = () => {
     }));
   };
 
+  // ── Submit ──────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
@@ -69,13 +109,37 @@ const CreateListingPage = () => {
       return;
     }
     setLoading(true);
+
     try {
-      await api.post('/accommodations', {
-        ...form,
-        amenities: form.amenities,
-        images: form.images,
-      });
+      let response;
+
+      if (uploadMode === 'file' && imageFiles.length > 0) {
+        // Use multipart/form-data so multer can handle the files
+        const formData = new FormData();
+        Object.entries(form).forEach(([key, val]) => {
+          if (key === 'amenities') {
+            val.forEach((a) => formData.append('amenities', a));
+          } else if (key !== 'imageUrls') {
+            formData.append(key, val);
+          }
+        });
+        imageFiles.forEach((file) => formData.append('images', file));
+
+        response = await api.post('/accommodations', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      } else {
+        // JSON mode with URL strings
+        response = await api.post('/accommodations', {
+          ...form,
+          amenities: form.amenities,
+          images: form.imageUrls,
+        });
+      }
+
       setSuccess('Listing created successfully!');
+      // Clean up object URLs
+      imagePreviews.forEach((url) => URL.revokeObjectURL(url));
       setTimeout(() => navigate('/listings'), 1500);
     } catch (err) {
       setServerError(err.response?.data?.message || 'Failed to create listing. Please try again.');
@@ -84,6 +148,7 @@ const CreateListingPage = () => {
     }
   };
 
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <main className="listing-form-page container">
       <div className="listing-form-header">
@@ -91,10 +156,12 @@ const CreateListingPage = () => {
         <p>Fill in the details below to add a new property.</p>
       </div>
 
-      {serverError && <div className="alert alert-error">{serverError}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      {serverError && <div className="alert alert-error" role="alert">{serverError}</div>}
+      {success && <div className="alert alert-success" role="status">{success}</div>}
 
-      <form onSubmit={handleSubmit} className="listing-form" noValidate>
+      <form onSubmit={handleSubmit} className="listing-form" noValidate encType="multipart/form-data">
+
+        {/* ── Basic Info ──────────────────────────────────────────────────── */}
         <div className="form-section">
           <h2>Basic Information</h2>
           <div className="form-row">
@@ -134,6 +201,7 @@ const CreateListingPage = () => {
           </div>
         </div>
 
+        {/* ── Capacity ────────────────────────────────────────────────────── */}
         <div className="form-section">
           <h2>Capacity</h2>
           <div className="form-row form-row-4">
@@ -153,6 +221,7 @@ const CreateListingPage = () => {
           </div>
         </div>
 
+        {/* ── Pricing ─────────────────────────────────────────────────────── */}
         <div className="form-section">
           <h2>Pricing (USD)</h2>
           <div className="form-row form-row-4">
@@ -178,16 +247,93 @@ const CreateListingPage = () => {
           </div>
         </div>
 
+        {/* ── Images ──────────────────────────────────────────────────────── */}
         <div className="form-section">
-          <h2>Images</h2>
-          <div className="form-group">
-            <label htmlFor="images">Image URLs (comma-separated)</label>
-            <textarea id="images" name="images" value={form.images} onChange={handleChange} rows={3}
-              placeholder="https://images.unsplash.com/photo-xxx, https://..." />
-            <small className="form-hint">Paste full image URLs separated by commas</small>
+          <h2>Property Images</h2>
+
+          {/* Toggle between file upload and URL */}
+          <div className="upload-mode-toggle">
+            <button
+              type="button"
+              className={`mode-btn ${uploadMode === 'file' ? 'active' : ''}`}
+              onClick={() => setUploadMode('file')}
+            >
+              📁 Upload Files
+            </button>
+            <button
+              type="button"
+              className={`mode-btn ${uploadMode === 'url' ? 'active' : ''}`}
+              onClick={() => setUploadMode('url')}
+            >
+              🔗 Use URLs
+            </button>
           </div>
+
+          {uploadMode === 'file' ? (
+            <div className="file-upload-area">
+              {/* Drop zone / file input */}
+              <div
+                className="drop-zone"
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const dt = { target: { files: e.dataTransfer.files } };
+                  handleFileChange(dt);
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label="Click or drag images here to upload"
+                onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
+              >
+                <span className="drop-icon" aria-hidden="true">🖼️</span>
+                <p><strong>Click to upload</strong> or drag &amp; drop</p>
+                <p className="drop-hint">JPEG, PNG, WebP, GIF — max 5 MB each, up to 10 images</p>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                name="images"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                multiple
+                onChange={handleFileChange}
+                className="sr-only"
+                aria-label="Upload property images"
+              />
+
+              {/* Image previews */}
+              {imagePreviews.length > 0 && (
+                <div className="image-previews" aria-label="Selected images">
+                  {imagePreviews.map((src, i) => (
+                    <div key={i} className="preview-item">
+                      <img src={src} alt={`Preview ${i + 1}`} />
+                      <button
+                        type="button"
+                        className="preview-remove"
+                        onClick={() => removeImage(i)}
+                        aria-label={`Remove image ${i + 1}`}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="form-group">
+              <label htmlFor="imageUrls">Image URLs (comma-separated)</label>
+              <textarea id="imageUrls" name="imageUrls" value={form.imageUrls} onChange={handleChange}
+                rows={3} placeholder="https://images.unsplash.com/photo-xxx, https://..." />
+              <small className="form-hint">Paste full image URLs separated by commas</small>
+            </div>
+          )}
+
+          {errors.images && <span className="form-error">{errors.images}</span>}
         </div>
 
+        {/* ── Amenities ───────────────────────────────────────────────────── */}
         <div className="form-section">
           <h2>Amenities</h2>
           <div className="amenities-grid">
@@ -201,6 +347,7 @@ const CreateListingPage = () => {
           </div>
         </div>
 
+        {/* ── Features ────────────────────────────────────────────────────── */}
         <div className="form-section">
           <h2>Features</h2>
           <div className="checkbox-row">
@@ -220,7 +367,9 @@ const CreateListingPage = () => {
             Cancel
           </button>
           <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Creating...' : 'Create Listing'}
+            {loading
+              ? <><span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> Creating...</>
+              : 'Create Listing'}
           </button>
         </div>
       </form>
