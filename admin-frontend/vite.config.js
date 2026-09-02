@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  // In production the admin app is served at /admin from the Express server
+  base: process.env.NODE_ENV === 'production' ? '/admin/' : '/',
   server: {
     port: 3001,
     proxy: {
@@ -11,5 +13,9 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
   },
 });
