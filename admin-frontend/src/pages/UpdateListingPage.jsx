@@ -1,9 +1,10 @@
 /**
  * pages/UpdateListingPage.jsx
  * Pre-fills the listing form with existing data for seamless updates.
+ * Supports file upload (multipart/form-data via multer) and URL fallback.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api/axios';
 import './ListingForm.css';
@@ -22,14 +23,19 @@ const ACCOMMODATION_TYPES = [
 const UpdateListingPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+
   const [form, setForm] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [uploadMode, setUploadMode] = useState('url'); // default to url (existing images)
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
 
-  // Load existing listing data
+  // ── Load existing listing data ──────────────────────────────────────────────
   useEffect(() => {
     const fetchListing = async () => {
       try {
@@ -49,7 +55,7 @@ const UpdateListingPage = () => {
           serviceFee: String(d.serviceFee || '0'),
           occupancyTaxes: String(d.occupancyTaxes || '0'),
           host: d.host || '',
-          images: Array.isArray(d.images) ? d.images.join(', ') : '',
+          imageUrls: Array.isArray(d.images) ? d.images.join(', ') : '',
           amenities: d.amenities || [],
           enhancedCleaning: d.enhancedCleaning || false,
           selfCheckIn: d.selfCheckIn || false,
@@ -63,6 +69,7 @@ const UpdateListingPage = () => {
     fetchListing();
   }, [id]);
 
+  // ── Validation ──────────────────────────────────────────────────────────────
   const validate = () => {
     const e = {};
     if (!form.title.trim()) e.title = 'Title is required';
@@ -72,11 +79,37 @@ const UpdateListingPage = () => {
     return e;
   };
 
+  // ── Handlers ────────────────────────────────────────────────────────────────
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
     setServerError('');
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (files.some((f) => !allowed.includes(f.type))) {
+      setErrors((prev) => ({ ...prev, images: 'Only JPEG, PNG, WebP and GIF images allowed' }));
+      return;
+    }
+    if (files.some((f) => f.size > 5 * 1024 * 1024)) {
+      setErrors((prev) => ({ ...prev, images: 'Each image must be under 5 MB' }));
+      return;
+    }
+    setImageFiles(files);
+    setImagePreviews(files.map((f) => URL.createObjectURL(f)));
+    if (errors.images) setErrors((prev) => ({ ...prev, images: '' }));
+  };
+
+  const removeImage = (index) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const toggleAmenity = (amenity) => {
@@ -88,6 +121,7 @@ const UpdateListingPage = () => {
     }));
   };
 
+  // ── Submit ──────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
@@ -97,12 +131,28 @@ const UpdateListingPage = () => {
     }
     setLoading(true);
     try {
-      await api.put(`/accommodations/${id}`, {
-        ...form,
-        amenities: form.amenities,
-        images: form.images,
-      });
+      if (uploadMode === 'file' && imageFiles.length > 0) {
+        const formData = new FormData();
+        Object.entries(form).forEach(([key, val]) => {
+          if (key === 'amenities') {
+            val.forEach((a) => formData.append('amenities', a));
+          } else if (key !== 'imageUrls') {
+            formData.append(key, val);
+          }
+        });
+        imageFiles.forEach((file) => formData.append('images', file));
+        await api.put(`/accommodations/${id}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      } else {
+        await api.put(`/accommodations/${id}`, {
+          ...form,
+          amenities: form.amenities,
+          images: form.imageUrls,
+        });
+      }
       setSuccess('Listing updated successfully!');
+      imagePreviews.forEach((url) => URL.revokeObjectURL(url));
       setTimeout(() => navigate('/listings'), 1500);
     } catch (err) {
       setServerError(err.response?.data?.message || 'Failed to update listing.');
@@ -111,8 +161,13 @@ const UpdateListingPage = () => {
     }
   };
 
+  // ── Render ──────────────────────────────────────────────────────────────────
   if (fetchLoading) return <div className="spinner-wrap"><div className="spinner" /></div>;
-  if (!form) return <div className="container" style={{ padding: 40 }}><div className="alert alert-error">{serverError}</div></div>;
+  if (!form) return (
+    <div className="container" style={{ padding: 40 }}>
+      <div className="alert alert-error">{serverError}</div>
+    </div>
+  );
 
   return (
     <main className="listing-form-page container">
@@ -121,10 +176,12 @@ const UpdateListingPage = () => {
         <p>Edit the details below and save your changes.</p>
       </div>
 
-      {serverError && <div className="alert alert-error">{serverError}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      {serverError && <div className="alert alert-error" role="alert">{serverError}</div>}
+      {success && <div className="alert alert-success" role="status">{success}</div>}
 
-      <form onSubmit={handleSubmit} className="listing-form" noValidate>
+      <form onSubmit={handleSubmit} className="listing-form" noValidate encType="multipart/form-data">
+
+        {/* ── Basic Info ──────────────────────────────────────────────────── */}
         <div className="form-section">
           <h2>Basic Information</h2>
           <div className="form-row">
@@ -161,6 +218,7 @@ const UpdateListingPage = () => {
           </div>
         </div>
 
+        {/* ── Capacity ────────────────────────────────────────────────────── */}
         <div className="form-section">
           <h2>Capacity</h2>
           <div className="form-row form-row-4">
@@ -173,6 +231,7 @@ const UpdateListingPage = () => {
           </div>
         </div>
 
+        {/* ── Pricing ─────────────────────────────────────────────────────── */}
         <div className="form-section">
           <h2>Pricing (USD)</h2>
           <div className="form-row form-row-4">
@@ -198,14 +257,60 @@ const UpdateListingPage = () => {
           </div>
         </div>
 
+        {/* ── Images ──────────────────────────────────────────────────────── */}
         <div className="form-section">
-          <h2>Images</h2>
-          <div className="form-group">
-            <label htmlFor="images">Image URLs (comma-separated)</label>
-            <textarea id="images" name="images" value={form.images} onChange={handleChange} rows={3} />
+          <h2>Property Images</h2>
+
+          <div className="upload-mode-toggle">
+            <button type="button" className={`mode-btn ${uploadMode === 'url' ? 'active' : ''}`}
+              onClick={() => setUploadMode('url')}>🔗 Keep / Update URLs</button>
+            <button type="button" className={`mode-btn ${uploadMode === 'file' ? 'active' : ''}`}
+              onClick={() => setUploadMode('file')}>📁 Upload New Files</button>
           </div>
+
+          {uploadMode === 'url' ? (
+            <div className="form-group">
+              <label htmlFor="imageUrls">Image URLs (comma-separated)</label>
+              <textarea id="imageUrls" name="imageUrls" value={form.imageUrls}
+                onChange={handleChange} rows={3} />
+            </div>
+          ) : (
+            <div className="file-upload-area">
+              <div
+                className="drop-zone"
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  handleFileChange({ target: { files: e.dataTransfer.files } });
+                }}
+                role="button" tabIndex={0} aria-label="Upload new images"
+                onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
+              >
+                <span className="drop-icon" aria-hidden="true">🖼️</span>
+                <p><strong>Click to upload</strong> or drag &amp; drop</p>
+                <p className="drop-hint">JPEG, PNG, WebP, GIF — max 5 MB each</p>
+              </div>
+              <input ref={fileInputRef} type="file" name="images"
+                accept="image/jpeg,image/png,image/webp,image/gif" multiple
+                onChange={handleFileChange} className="sr-only" />
+              {imagePreviews.length > 0 && (
+                <div className="image-previews">
+                  {imagePreviews.map((src, i) => (
+                    <div key={i} className="preview-item">
+                      <img src={src} alt={`Preview ${i + 1}`} />
+                      <button type="button" className="preview-remove"
+                        onClick={() => removeImage(i)} aria-label={`Remove image ${i + 1}`}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {errors.images && <span className="form-error">{errors.images}</span>}
         </div>
 
+        {/* ── Amenities ───────────────────────────────────────────────────── */}
         <div className="form-section">
           <h2>Amenities</h2>
           <div className="amenities-grid">
@@ -219,6 +324,7 @@ const UpdateListingPage = () => {
           </div>
         </div>
 
+        {/* ── Features ────────────────────────────────────────────────────── */}
         <div className="form-section">
           <h2>Features</h2>
           <div className="checkbox-row">
@@ -238,7 +344,9 @@ const UpdateListingPage = () => {
             Cancel
           </button>
           <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Saving...' : 'Save Changes'}
+            {loading
+              ? <><span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> Saving...</>
+              : 'Save Changes'}
           </button>
         </div>
       </form>
