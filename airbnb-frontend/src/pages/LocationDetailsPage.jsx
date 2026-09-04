@@ -1,11 +1,7 @@
 /**
  * pages/LocationDetailsPage.jsx
- * Full listing details page:
- *  - Heading & subheading
- *  - Image gallery (1 large + 4 smaller)
- *  - Two-column layout: static info left, cost calculator right
- *  - Static info sections: amenities, sleep, reviews, host, rules
- *  - Footer
+ * Full listing details — matches Airbnb screenshots exactly.
+ * SVG icons throughout, no emoji. Airbnb-style calculator sidebar.
  */
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -14,83 +10,87 @@ import Footer from '../components/Footer/Footer';
 import LoginModal from '../components/LoginModal/LoginModal';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
+import {
+  Star, Heart, Share, MapPin, Award, Key, Sparkles, Calendar,
+  Bed, Bath, Users, Shield, Home, MessageCircle, Clock,
+  Minus, Plus, Camera, Info, CheckCircle, getAmenityIcon,
+} from '../components/Icons';
 import './LocationDetailsPage.css';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const StarRating = ({ rating, size = 'sm' }) => {
-  const full = Math.floor(rating);
-  const half = rating % 1 >= 0.5;
-  return (
-    <span className={`stars stars-${size}`} aria-label={`${rating} out of 5`}>
-      {'★'.repeat(full)}{half ? '½' : ''}{'☆'.repeat(5 - full - (half ? 1 : 0))}
-    </span>
-  );
-};
+const StarRating = ({ rating = 0, count, inline = false }) => (
+  <span className={`star-rating ${inline ? 'star-inline' : ''}`}>
+    <Star size={14} filled />
+    <strong>{Number(rating).toFixed(1)}</strong>
+    {count != null && <span className="review-count">· {count} review{count !== 1 ? 's' : ''}</span>}
+  </span>
+);
 
-const RatingBar = ({ label, value }) => (
+const RatingBar = ({ label, value = 0 }) => (
   <div className="rating-bar-row">
-    <span className="rating-bar-label">{label}</span>
-    <div className="rating-bar-track" role="progressbar" aria-valuenow={value} aria-valuemin={0} aria-valuemax={5}>
-      <div className="rating-bar-fill" style={{ width: `${(value / 5) * 100}%` }} />
+    <span className="rbl">{label}</span>
+    <div className="rbt" role="progressbar" aria-valuenow={value} aria-valuemin={0} aria-valuemax={5}>
+      <div className="rbf" style={{ width: `${(value / 5) * 100}%` }} />
     </div>
-    <span className="rating-bar-val">{value.toFixed(1)}</span>
+    <span className="rbv">{value.toFixed(1)}</span>
   </div>
 );
 
-// ── Component ─────────────────────────────────────────────────────────────────
-const LocationDetailsPage = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const [listing, setListing] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [showLogin, setShowLogin] = useState(false);
+// Format date nicely: "4 Sep 2026"
+const fmtDate = (d) =>
+  new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
-  // Calculator state
-  const today = new Date().toISOString().split('T')[0];
+// ── Main Component ────────────────────────────────────────────────────────────
+const LocationDetailsPage = () => {
+  const { id }     = useParams();
+  const navigate   = useNavigate();
+  const { user }   = useAuth();
+
+  const [listing,        setListing]        = useState(null);
+  const [loading,        setLoading]        = useState(true);
+  const [fetchError,     setFetchError]     = useState('');
+  const [showLogin,      setShowLogin]      = useState(false);
+  const [saved,          setSaved]          = useState(false);
+
+  // Calculator
+  const today     = new Date().toISOString().split('T')[0];
   const weekLater = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
-  const [checkIn, setCheckIn] = useState(today);
-  const [checkOut, setCheckOut] = useState(weekLater);
-  const [guestCount, setGuestCount] = useState(1);
-  const [reserving, setReserving] = useState(false);
-  const [reserveError, setReserveError] = useState('');
+  const [checkIn,        setCheckIn]        = useState(today);
+  const [checkOut,       setCheckOut]       = useState(weekLater);
+  const [guestCount,     setGuestCount]     = useState(1);
+  const [reserving,      setReserving]      = useState(false);
+  const [reserveError,   setReserveError]   = useState('');
   const [reserveSuccess, setReserveSuccess] = useState('');
 
   useEffect(() => {
-    const fetchListing = async () => {
+    const load = async () => {
       try {
         const res = await api.get(`/accommodations/${id}`);
         setListing(res.data);
-        setGuestCount(1);
       } catch {
-        setError('Listing not found.');
+        setFetchError('Listing not found.');
       } finally {
         setLoading(false);
       }
     };
-    fetchListing();
+    load();
   }, [id]);
 
-  // ── Calculator logic ──────────────────────────────────────────────────────
-  const calcNights = () => {
-    const diff = new Date(checkOut) - new Date(checkIn);
-    return Math.max(1, Math.ceil(diff / 86400000));
-  };
-
-  const nights = calcNights();
-  const baseTotal = listing ? listing.price * nights : 0;
+  // ── Cost math ─────────────────────────────────────────────────────────────
+  const nights      = Math.max(1, Math.ceil((new Date(checkOut) - new Date(checkIn)) / 86400000));
+  const baseTotal   = listing ? listing.price * nights : 0;
   const discountAmt = listing && nights >= 7 && listing.weeklyDiscount > 0
     ? (baseTotal * listing.weeklyDiscount) / 100 : 0;
-  const cleaning = listing?.cleaningFee || 0;
-  const service = listing?.serviceFee || 0;
-  const taxes = listing?.occupancyTaxes || 0;
-  const grandTotal = baseTotal - discountAmt + cleaning + service + taxes;
+  const cleaning    = listing?.cleaningFee    || 0;
+  const service     = listing?.serviceFee     || 0;
+  const taxes       = listing?.occupancyTaxes || 0;
+  const grandTotal  = baseTotal - discountAmt + cleaning + service + taxes;
 
   const handleReserve = async () => {
     if (!user) { setShowLogin(true); return; }
     setReserving(true);
     setReserveError('');
+    setReserveSuccess('');
     try {
       await api.post('/reservations', {
         accommodation: id,
@@ -98,85 +98,112 @@ const LocationDetailsPage = () => {
         checkOut,
         guests: guestCount,
       });
-      setReserveSuccess('🎉 Reservation confirmed! Check your reservations page.');
+      setReserveSuccess('Reservation confirmed!');
     } catch (err) {
-      setReserveError(err.response?.data?.message || 'Reservation failed. Please try again.');
+      setReserveError(err.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {
       setReserving(false);
     }
   };
 
-  if (loading) return <div className="spinner-wrap" style={{ height: '100vh' }}><div className="spinner" /></div>;
-  if (error || !listing) return (
-    <div className="details-error">
+  // ── Loading / Error states ────────────────────────────────────────────────
+  if (loading) return (
+    <div className="dp-loading">
+      <div className="dp-spinner" />
+    </div>
+  );
+  if (fetchError || !listing) return (
+    <div className="dp-not-found">
       <h2>Listing not found</h2>
-      <button className="btn btn-primary" onClick={() => navigate('/')}>Back to Home</button>
+      <button className="dp-btn-primary" onClick={() => navigate('/')}>Back to Home</button>
     </div>
   );
 
-  const images = listing.images.length >= 5
+  // Pad images to 5
+  const imgs = listing.images.length >= 5
     ? listing.images
-    : [...listing.images, ...Array(5 - listing.images.length).fill(listing.images[0] || '')];
+    : [...listing.images, ...Array(5 - listing.images.length).fill(listing.images[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800')];
 
   const sr = listing.specificRatings || {};
 
   return (
-    <div className="details-page">
+    <div className="dp-page">
       <Header />
-      <main className="details-main container">
 
-        {/* ── Heading ──────────────────────────────────────────────────────── */}
-        <section className="details-heading" aria-labelledby="listing-title">
-          <h1 id="listing-title">{listing.title}</h1>
-          <div className="details-subheading">
-            <StarRating rating={listing.rating || 0} size="md" />
-            <span className="details-reviews">({listing.reviews} reviews)</span>
-            <span className="details-sep">·</span>
-            <span className="details-superhost">🏆 Superhost</span>
-            <span className="details-sep">·</span>
-            <span className="details-location">📍 {listing.location}</span>
-          </div>
-        </section>
+      <main className="dp-main dp-container">
 
-        {/* ── Image Gallery ─────────────────────────────────────────────────── */}
-        <section className="gallery" aria-label="Property images">
-          <div className="gallery-large">
-            <img src={images[0]} alt={`${listing.title} - main`} loading="eager" />
+        {/* ── Title row ──────────────────────────────────────────────────── */}
+        <div className="dp-title-row">
+          <h1 className="dp-title">{listing.title}</h1>
+          <div className="dp-title-actions">
+            <button className="dp-action-btn" onClick={() => navigator.share?.({ title: listing.title, url: window.location.href })}>
+              <Share size={16} /> <span>Share</span>
+            </button>
+            <button className="dp-action-btn" onClick={() => setSaved(s => !s)}>
+              <Heart size={16} filled={saved} /> <span>{saved ? 'Saved' : 'Save'}</span>
+            </button>
           </div>
-          <div className="gallery-grid">
-            {images.slice(1, 5).map((img, i) => (
-              <div key={i} className="gallery-small">
-                <img src={img} alt={`${listing.title} - view ${i + 2}`} loading="lazy" />
+        </div>
+
+        {/* ── Subheading ─────────────────────────────────────────────────── */}
+        <div className="dp-subheading">
+          <StarRating rating={listing.rating} count={listing.reviews} inline />
+          <span className="dp-sep">·</span>
+          <span className="dp-superhost"><Award size={14} /> Superhost</span>
+          <span className="dp-sep">·</span>
+          <span className="dp-location"><MapPin size={14} /> {listing.location}</span>
+        </div>
+
+        {/* ── Gallery ────────────────────────────────────────────────────── */}
+        <div className="dp-gallery">
+          <div className="dp-gallery-main">
+            <img src={imgs[0]} alt={listing.title} loading="eager" />
+          </div>
+          <div className="dp-gallery-grid">
+            {imgs.slice(1, 5).map((img, i) => (
+              <div key={i} className="dp-gallery-thumb">
+                <img src={img} alt={`${listing.title} view ${i + 2}`} loading="lazy" />
               </div>
             ))}
           </div>
-        </section>
+          <button className="dp-show-photos">
+            <Camera size={16} /> Show all photos
+          </button>
+        </div>
 
-        {/* ── Two Column Layout ─────────────────────────────────────────────── */}
-        <div className="details-columns">
-          {/* LEFT: Info ─────────────────────────────────────────────────────── */}
-          <div className="details-info">
-            {/* Accommodation details */}
-            <section className="info-section">
-              <div className="info-host-row">
-                <div>
-                  <h2>{listing.type} hosted by {listing.host}</h2>
-                  <p className="info-capacity">
-                    {listing.guests} guests · {listing.bedrooms} bedroom{listing.bedrooms !== 1 ? 's' : ''} ·{' '}
-                    {listing.bathrooms} bath{listing.bathrooms !== 1 ? 's' : ''}
-                  </p>
-                </div>
-                <div className="host-avatar" aria-label={`Host ${listing.host}`}>
-                  {listing.host.charAt(0).toUpperCase()}
-                </div>
+        {/* ── Two columns ────────────────────────────────────────────────── */}
+        <div className="dp-columns">
+
+          {/* ── LEFT ───────────────────────────────────────────────────── */}
+          <div className="dp-left">
+
+            {/* Host row */}
+            <div className="dp-host-row">
+              <div>
+                <h2 className="dp-host-title">
+                  {listing.type} hosted by {listing.host}
+                </h2>
+                <p className="dp-host-meta">
+                  <Users size={14} /> {listing.guests} guests
+                  <span className="dp-dot" />
+                  <Bed size={14} /> {listing.bedrooms} bedroom{listing.bedrooms !== 1 ? 's' : ''}
+                  <span className="dp-dot" />
+                  <Bath size={14} /> {listing.bathrooms} bath{listing.bathrooms !== 1 ? 's' : ''}
+                </p>
               </div>
-            </section>
+              <div className="dp-host-avatar">
+                {listing.host.charAt(0).toUpperCase()}
+                <span className="dp-host-superhost-badge" title="Superhost">
+                  <Award size={10} />
+                </span>
+              </div>
+            </div>
 
-            {/* Highlight badges */}
-            <section className="info-section highlights">
+            {/* Feature highlights */}
+            <div className="dp-highlights">
               {listing.selfCheckIn && (
-                <div className="highlight-item">
-                  <span className="hi-icon" aria-hidden="true">🔑</span>
+                <div className="dp-highlight">
+                  <Key size={22} className="dp-hi-icon" />
                   <div>
                     <strong>Self check-in</strong>
                     <p>Check yourself in with the lockbox.</p>
@@ -184,239 +211,329 @@ const LocationDetailsPage = () => {
                 </div>
               )}
               {listing.enhancedCleaning && (
-                <div className="highlight-item">
-                  <span className="hi-icon" aria-hidden="true">✨</span>
+                <div className="dp-highlight">
+                  <Sparkles size={22} className="dp-hi-icon" />
                   <div>
                     <strong>Enhanced Clean</strong>
                     <p>This host committed to Airbnb's 5-step enhanced cleaning process.</p>
                   </div>
                 </div>
               )}
-              <div className="highlight-item">
-                <span className="hi-icon" aria-hidden="true">🗓️</span>
+              <div className="dp-highlight">
+                <Calendar size={22} className="dp-hi-icon" />
                 <div>
-                  <strong>Free cancellation</strong>
-                  <p>Cancel before check-in for a partial refund.</p>
+                  <strong>Free cancellation before check-in</strong>
+                  <p>Get a full refund if you cancel.</p>
                 </div>
               </div>
-            </section>
+            </div>
 
             {/* Description */}
-            <section className="info-section">
-              <p className="listing-description">{listing.description}</p>
-            </section>
+            <div className="dp-section dp-description">
+              <p>{listing.description}</p>
+              <button className="dp-show-more">Show more <span>›</span></button>
+            </div>
 
             {/* Where you'll sleep */}
-            <section className="info-section" aria-labelledby="sleep-heading">
-              <h3 id="sleep-heading">Where you'll sleep</h3>
-              <div className="sleep-grid">
+            <div className="dp-section">
+              <h3>Where you'll sleep</h3>
+              <div className="dp-sleep-grid">
                 {Array.from({ length: Math.max(1, listing.bedrooms) }).map((_, i) => (
-                  <div key={i} className="sleep-card">
-                    <span className="sleep-icon" aria-hidden="true">🛏️</span>
+                  <div key={i} className="dp-sleep-card">
+                    <Bed size={28} />
                     <strong>Bedroom {i + 1}</strong>
                     <span>1 queen bed</span>
                   </div>
                 ))}
               </div>
-            </section>
+            </div>
 
-            {/* Amenities */}
-            <section className="info-section" aria-labelledby="amenities-heading">
-              <h3 id="amenities-heading">What this place offers</h3>
-              <div className="amenities-list">
-                {listing.amenities.map((a) => (
-                  <div key={a} className="amenity-item">
-                    <span aria-hidden="true">✓</span> {a}
-                  </div>
-                ))}
+            {/* What this place offers */}
+            <div className="dp-section">
+              <h3>What this place offers</h3>
+              <div className="dp-amenities-grid">
+                {listing.amenities.map((a) => {
+                  const AIcon = getAmenityIcon(a);
+                  return (
+                    <div key={a} className="dp-amenity-row">
+                      <AIcon size={20} />
+                      <span>{a}</span>
+                    </div>
+                  );
+                })}
               </div>
-            </section>
-
-            {/* 7 nights section */}
-            <section className="info-section nights-section" aria-labelledby="nights-heading">
-              <h3 id="nights-heading">{nights} night{nights !== 1 ? 's' : ''} in {listing.location}</h3>
-              <p className="nights-dates">
-                {new Date(checkIn).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })} –{' '}
-                {new Date(checkOut).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })}
-              </p>
-            </section>
-
-            {/* Reviews */}
-            <section className="info-section" aria-labelledby="reviews-heading">
-              <h3 id="reviews-heading">
-                <StarRating rating={listing.rating} size="md" />
-                <span style={{ marginLeft: 8 }}>{listing.rating} · {listing.reviews} reviews</span>
-              </h3>
-              {Object.keys(sr).length > 0 && (
-                <div className="ratings-breakdown">
-                  {sr.cleanliness   != null && <RatingBar label="Cleanliness"   value={sr.cleanliness}   />}
-                  {sr.communication != null && <RatingBar label="Communication" value={sr.communication} />}
-                  {sr.checkIn       != null && <RatingBar label="Check-in"      value={sr.checkIn}       />}
-                  {sr.accuracy      != null && <RatingBar label="Accuracy"      value={sr.accuracy}      />}
-                  {sr.location      != null && <RatingBar label="Location"      value={sr.location}      />}
-                  {sr.value         != null && <RatingBar label="Value"         value={sr.value}         />}
-                </div>
+              {listing.amenities.length > 6 && (
+                <button className="dp-amenities-btn">
+                  Show all {listing.amenities.length} amenities
+                </button>
               )}
-            </section>
+            </div>
 
-            {/* Host details */}
-            <section className="info-section host-section" aria-labelledby="host-heading">
-              <h3 id="host-heading">About your host</h3>
-              <div className="host-card">
-                <div className="host-avatar-lg">{listing.host.charAt(0).toUpperCase()}</div>
-                <div>
-                  <strong className="host-name">{listing.host}</strong>
-                  <p className="host-meta">Superhost · 3 years hosting</p>
-                  <p className="host-bio">Hi, I'm {listing.host}! I love sharing my home with guests from around the world. I'll make sure you feel welcome and have everything you need.</p>
-                </div>
-              </div>
-            </section>
-
-            {/* House Rules, Health & Safety, Cancellation */}
-            <section className="info-section rules-section" aria-labelledby="rules-heading">
-              <div className="rules-grid">
-                <div className="rules-col">
-                  <h4 id="rules-heading">🏠 House rules</h4>
-                  <ul>
-                    <li>Check-in: 3:00 PM – 10:00 PM</li>
-                    <li>Checkout: 11:00 AM</li>
-                    <li>Max {listing.guests} guests</li>
-                    <li>No smoking</li>
-                    <li>No parties or events</li>
-                  </ul>
-                </div>
-                <div className="rules-col">
-                  <h4>🛡️ Health & safety</h4>
-                  <ul>
-                    <li>Airbnb's COVID-19 safety requirements apply</li>
-                    <li>Carbon monoxide alarm</li>
-                    <li>Smoke alarm</li>
-                    <li>Security camera/recording device</li>
-                  </ul>
-                </div>
-                <div className="rules-col">
-                  <h4>🔄 Cancellation policy</h4>
-                  <ul>
-                    <li>Free cancellation before check-in</li>
-                    <li>Review the host's full cancellation policy</li>
-                    <li>Get a full refund if you cancel within 48 hrs</li>
-                  </ul>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          {/* RIGHT: Cost Calculator ────────────────────────────────────────── */}
-          <aside className="details-calculator" aria-label="Booking calculator">
-            <div className="calc-card">
-              <div className="calc-price-header">
-                <span className="calc-price">${listing.price}</span>
-                <span className="calc-per-night"> / night</span>
-                <div className="calc-rating-inline">
-                  <StarRating rating={listing.rating} />
-                  <span>{listing.reviews} reviews</span>
-                </div>
-              </div>
-
-              {/* Date pickers */}
-              <div className="calc-dates">
-                <div className="date-field">
-                  <label htmlFor="checkin-date">CHECK-IN</label>
+            {/* Nights / Calendar section */}
+            <div className="dp-section dp-nights-section">
+              <h3>
+                {nights} night{nights !== 1 ? 's' : ''} in {listing.location}
+              </h3>
+              <p className="dp-nights-dates">
+                {fmtDate(checkIn)} – {fmtDate(checkOut)}
+              </p>
+              {/* Inline date grid — mirrors Airbnb's calendar display */}
+              <div className="dp-date-display">
+                <div className="dp-date-col">
+                  <span className="dp-date-label">CHECK-IN</span>
                   <input
-                    id="checkin-date"
                     type="date"
                     value={checkIn}
                     min={today}
                     onChange={(e) => { setCheckIn(e.target.value); setReserveSuccess(''); }}
-                    aria-label="Check-in date"
+                    className="dp-date-input"
                   />
                 </div>
-                <div className="date-divider" aria-hidden="true" />
-                <div className="date-field">
-                  <label htmlFor="checkout-date">CHECKOUT</label>
+                <div className="dp-date-col">
+                  <span className="dp-date-label">CHECKOUT</span>
                   <input
-                    id="checkout-date"
                     type="date"
                     value={checkOut}
                     min={checkIn}
                     onChange={(e) => { setCheckOut(e.target.value); setReserveSuccess(''); }}
-                    aria-label="Check-out date"
+                    className="dp-date-input"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Reviews */}
+            <div className="dp-section dp-reviews-section">
+              <h3 className="dp-reviews-heading">
+                <Star size={18} filled />
+                {Number(listing.rating).toFixed(1)} · {listing.reviews} review{listing.reviews !== 1 ? 's' : ''}
+              </h3>
+              {Object.keys(sr).length > 0 && (
+                <div className="dp-ratings-grid">
+                  <div>
+                    {sr.cleanliness   != null && <RatingBar label="Cleanliness"   value={sr.cleanliness}   />}
+                    {sr.communication != null && <RatingBar label="Communication" value={sr.communication} />}
+                    {sr.checkIn       != null && <RatingBar label="Check-in"      value={sr.checkIn}       />}
+                  </div>
+                  <div>
+                    {sr.accuracy  != null && <RatingBar label="Accuracy"  value={sr.accuracy}  />}
+                    {sr.location  != null && <RatingBar label="Location"  value={sr.location}  />}
+                    {sr.value     != null && <RatingBar label="Value"     value={sr.value}     />}
+                  </div>
+                </div>
+              )}
+              {/* Sample review cards */}
+              <div className="dp-review-cards">
+                {[
+                  { name: 'Sarah', date: 'September 2026', text: 'Amazing place! The location is perfect and the host was very responsive. Highly recommend.' },
+                  { name: 'James', date: 'August 2026',    text: 'Beautiful property, clean and well equipped. Would definitely stay again.' },
+                ].map((r) => (
+                  <div key={r.name} className="dp-review-card">
+                    <div className="dp-reviewer">
+                      <div className="dp-reviewer-avatar">{r.name[0]}</div>
+                      <div>
+                        <strong>{r.name}</strong>
+                        <span>{r.date}</span>
+                      </div>
+                    </div>
+                    <p>{r.text}</p>
+                  </div>
+                ))}
+              </div>
+              <button className="dp-show-more">Show all {listing.reviews} reviews</button>
+            </div>
+
+            {/* About host */}
+            <div className="dp-section dp-host-section">
+              <h3>Hosted by {listing.host}</h3>
+              <div className="dp-host-card">
+                <div className="dp-host-avatar-lg">{listing.host.charAt(0).toUpperCase()}</div>
+                <div className="dp-host-info">
+                  <p className="dp-host-stats">
+                    <Award size={14} /> Superhost &nbsp;·&nbsp; 3 years hosting
+                  </p>
+                  <p className="dp-host-bio">
+                    Hi, I'm {listing.host}! I love sharing unique spaces with travellers from around the world. I'm always available and happy to help make your stay special.
+                  </p>
+                  <div className="dp-host-badges">
+                    <span><CheckCircle size={14} /> Identity verified</span>
+                    <span><MessageCircle size={14} /> Response rate: 100%</span>
+                    <span><Clock size={14} /> Responds within an hour</span>
+                  </div>
+                  <button className="dp-contact-btn">Contact Host</button>
+                </div>
+              </div>
+              <div className="dp-host-note">
+                <Info size={14} />
+                <p>To protect your payment, never transfer money or communicate outside of the Airbnb website or app.</p>
+              </div>
+            </div>
+
+            {/* Things to know */}
+            <div className="dp-section">
+              <h3>Things to know</h3>
+              <div className="dp-rules-grid">
+                <div className="dp-rules-col">
+                  <h4><Home size={16} /> House rules</h4>
+                  <ul>
+                    <li><Clock size={14} /> Check-in after 4:00 PM</li>
+                    <li><Clock size={14} /> Checkout: 10:00 AM</li>
+                    <li><Users size={14} /> Max {listing.guests} guests</li>
+                    <li><Shield size={14} /> No smoking</li>
+                    <li><Shield size={14} /> No parties or events</li>
+                  </ul>
+                </div>
+                <div className="dp-rules-col">
+                  <h4><Shield size={16} /> Health &amp; safety</h4>
+                  <ul>
+                    <li><CheckCircle size={14} /> Enhanced cleaning protocol</li>
+                    <li><CheckCircle size={14} /> Carbon monoxide alarm</li>
+                    <li><CheckCircle size={14} /> Smoke alarm</li>
+                    <li><Info size={14} /> Security camera on property</li>
+                  </ul>
+                </div>
+                <div className="dp-rules-col">
+                  <h4><Calendar size={16} /> Cancellation policy</h4>
+                  <ul>
+                    <li>Free cancellation before check-in</li>
+                    <li>Review the full cancellation policy</li>
+                    <li>Full refund if cancelled within 48 hrs</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+          </div>{/* end dp-left */}
+
+          {/* ── RIGHT — Calculator ──────────────────────────────────────── */}
+          <aside className="dp-calc" aria-label="Booking calculator">
+            <div className="dp-calc-card">
+
+              {/* Price + rating header */}
+              <div className="dp-calc-header">
+                <div className="dp-calc-price">
+                  <span className="dp-price-amount">${listing.price}</span>
+                  <span className="dp-price-unit"> / night</span>
+                </div>
+                <StarRating rating={listing.rating} count={listing.reviews} inline />
+              </div>
+
+              {/* Date grid */}
+              <div className="dp-calc-dates">
+                <div className="dp-calc-date-field dp-calc-date-left">
+                  <label>CHECK-IN</label>
+                  <input
+                    type="date"
+                    value={checkIn}
+                    min={today}
+                    onChange={(e) => { setCheckIn(e.target.value); setReserveSuccess(''); setReserveError(''); }}
+                  />
+                </div>
+                <div className="dp-calc-date-field dp-calc-date-right">
+                  <label>CHECKOUT</label>
+                  <input
+                    type="date"
+                    value={checkOut}
+                    min={checkIn}
+                    onChange={(e) => { setCheckOut(e.target.value); setReserveSuccess(''); setReserveError(''); }}
                   />
                 </div>
               </div>
 
-              {/* Guest count */}
-              <div className="calc-guests">
-                <label htmlFor="guest-count">GUESTS</label>
-                <div className="guest-counter">
+              {/* Guests */}
+              <div className="dp-calc-guests">
+                <div className="dp-calc-guest-label">
+                  <label>GUESTS</label>
+                  <span>{guestCount} guest{guestCount !== 1 ? 's' : ''}</span>
+                </div>
+                <div className="dp-guest-counter">
                   <button
-                    onClick={() => setGuestCount((g) => Math.max(1, g - 1))}
-                    aria-label="Decrease guests"
+                    onClick={() => setGuestCount(g => Math.max(1, g - 1))}
                     disabled={guestCount <= 1}
-                  >−</button>
-                  <span id="guest-count" aria-live="polite">{guestCount} guest{guestCount !== 1 ? 's' : ''}</span>
+                    aria-label="Remove guest"
+                  >
+                    <Minus size={14} />
+                  </button>
+                  <span>{guestCount}</span>
                   <button
-                    onClick={() => setGuestCount((g) => Math.min(listing.guests, g + 1))}
-                    aria-label="Increase guests"
+                    onClick={() => setGuestCount(g => Math.min(listing.guests, g + 1))}
                     disabled={guestCount >= listing.guests}
-                  >+</button>
+                    aria-label="Add guest"
+                  >
+                    <Plus size={14} />
+                  </button>
                 </div>
               </div>
 
               {/* Reserve button */}
               {reserveSuccess ? (
-                <div className="reserve-success">{reserveSuccess}</div>
+                <div className="dp-reserve-success">
+                  <CheckCircle size={18} /> {reserveSuccess}
+                </div>
               ) : (
                 <button
-                  className="btn btn-primary calc-reserve-btn"
+                  className="dp-reserve-btn"
                   onClick={handleReserve}
                   disabled={reserving}
-                  aria-label="Reserve this listing"
                 >
-                  {reserving ? 'Processing...' : user ? 'Reserve' : 'Log in to Reserve'}
+                  {reserving ? 'Processing…' : user ? 'Reserve' : 'Log in to Reserve'}
                 </button>
               )}
 
-              {reserveError && <div className="reserve-error">{reserveError}</div>}
+              {!reserveSuccess && (
+                <p className="dp-no-charge">You won't be charged yet</p>
+              )}
 
-              {/* Cost breakdown */}
-              <div className="calc-breakdown" aria-label="Cost breakdown">
-                <div className="breakdown-row">
+              {reserveError && (
+                <div className="dp-reserve-error">
+                  <Info size={14} /> {reserveError}
+                </div>
+              )}
+
+              {/* Price breakdown */}
+              <div className="dp-breakdown">
+                <div className="dp-br-row">
                   <span>${listing.price} × {nights} night{nights !== 1 ? 's' : ''}</span>
                   <span>${baseTotal.toFixed(2)}</span>
                 </div>
                 {discountAmt > 0 && (
-                  <div className="breakdown-row discount">
-                    <span>Weekly discount ({listing.weeklyDiscount}%)</span>
+                  <div className="dp-br-row dp-br-discount">
+                    <span>Weekly discount</span>
                     <span>−${discountAmt.toFixed(2)}</span>
                   </div>
                 )}
                 {cleaning > 0 && (
-                  <div className="breakdown-row">
+                  <div className="dp-br-row">
                     <span>Cleaning fee</span>
                     <span>${cleaning.toFixed(2)}</span>
                   </div>
                 )}
                 {service > 0 && (
-                  <div className="breakdown-row">
+                  <div className="dp-br-row">
                     <span>Service fee</span>
                     <span>${service.toFixed(2)}</span>
                   </div>
                 )}
                 {taxes > 0 && (
-                  <div className="breakdown-row">
-                    <span>Occupancy taxes & fees</span>
+                  <div className="dp-br-row">
+                    <span>Occupancy taxes and fees</span>
                     <span>${taxes.toFixed(2)}</span>
                   </div>
                 )}
-                <div className="breakdown-row total">
+                <div className="dp-br-row dp-br-total">
                   <strong>Total</strong>
                   <strong>${grandTotal.toFixed(2)}</strong>
                 </div>
               </div>
+
+              <button className="dp-report-link">
+                <Info size={12} /> Report this listing
+              </button>
+
             </div>
           </aside>
-        </div>
+
+        </div>{/* end dp-columns */}
       </main>
 
       <Footer />
