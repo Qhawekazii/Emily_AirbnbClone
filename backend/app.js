@@ -61,7 +61,7 @@ if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(__dirname, 'airbnb-frontend/dist/index.html'));
   });
 }
-} else {
+ else {
   // Development: health check at root
   app.get('/', (req, res) => {
     res.json({ message: 'Airbnb Clone API is running', status: 'OK' });
