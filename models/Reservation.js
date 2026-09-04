@@ -66,11 +66,10 @@ const reservationSchema = new mongoose.Schema(
 );
 
 // Validate check-out is after check-in
-reservationSchema.pre('save', function (next) {
+reservationSchema.pre('save', function () {
   if (this.checkOut <= this.checkIn) {
-    return next(new Error('Check-out date must be after check-in date'));
+    throw new Error('Check-out date must be after check-in date');
   }
-  next();
 });
 
 module.exports = mongoose.model('Reservation', reservationSchema);
