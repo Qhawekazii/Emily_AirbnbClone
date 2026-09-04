@@ -12,91 +12,107 @@ const Accommodation = require('../models/Accommodation');
 // ─── POST /api/reservations ───────────────────────────────────────────────────
 /**
  * Create a new reservation.
- * Requires authentication.
  * Body: { accommodation, checkIn, checkOut, guests }
  */
 const createReservation = async (req, res) => {
   try {
     const { accommodation: accommodationId, checkIn, checkOut, guests } = req.body;
 
+    // Validate required fields
     if (!accommodationId || !checkIn || !checkOut || !guests) {
       return res.status(400).json({
-        message: 'Accommodation ID, check-in, check-out, and guests are required',
+        message: 'Accommodation ID, check-in date, check-out date, and guest count are all required',
       });
     }
 
-    // Fetch listing to snapshot pricing
-    const listing = await Accommodation.findById(accommodationId);
-    if (!listing) {
-      return res.status(404).json({ message: 'Accommodation not found' });
-    }
-
-    // Calculate nights
-    const checkInDate = new Date(checkIn);
+    // Validate dates are parseable
+    const checkInDate  = new Date(checkIn);
     const checkOutDate = new Date(checkOut);
+
+    if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
+      return res.status(400).json({ message: 'Invalid date format for check-in or check-out' });
+    }
 
     if (checkOutDate <= checkInDate) {
       return res.status(400).json({ message: 'Check-out date must be after check-in date' });
     }
 
-    const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+    // Fetch listing
+    const listing = await Accommodation.findById(accommodationId);
+    if (!listing) {
+      return res.status(404).json({ message: 'Accommodation not found' });
+    }
 
-    // Validate guest count
-    if (Number(guests) > listing.guests) {
+    const nights      = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+    const guestNum    = Number(guests);
+
+    // Validate guest count against listing max
+    if (guestNum > listing.guests) {
       return res.status(400).json({
-        message: `This listing allows a maximum of ${listing.guests} guests`,
+        message: `This listing allows a maximum of ${listing.guests} guest${listing.guests !== 1 ? 's' : ''}`,
       });
     }
 
-    // Calculate total cost with weekly discount
-    let baseTotal = listing.price * nights;
+    // ── Cost calculation ──────────────────────────────────────────────────────
+    let baseTotal      = listing.price * nights;
     let discountAmount = 0;
 
     if (nights >= 7 && listing.weeklyDiscount > 0) {
       discountAmount = (baseTotal * listing.weeklyDiscount) / 100;
-      baseTotal -= discountAmount;
+      baseTotal     -= discountAmount;
     }
 
-    const totalCost =
-      baseTotal +
-      (listing.cleaningFee || 0) +
-      (listing.serviceFee || 0) +
-      (listing.occupancyTaxes || 0);
+    const totalCost = Math.round(
+      (baseTotal +
+        (listing.cleaningFee    || 0) +
+        (listing.serviceFee     || 0) +
+        (listing.occupancyTaxes || 0)) * 100
+    ) / 100;
 
-    const reservation = await Reservation.create({
-      accommodation: listing._id,
-      user: req.user._id,
-      host_id: listing.host_id,
-      checkIn: checkInDate,
-      checkOut: checkOutDate,
-      guests: Number(guests),
+    // ── Create reservation ────────────────────────────────────────────────────
+    const reservationData = {
+      accommodation  : listing._id,
+      user           : req.user._id,
+      checkIn        : checkInDate,
+      checkOut       : checkOutDate,
+      guests         : guestNum,
       nights,
-      pricePerNight: listing.price,
-      weeklyDiscount: discountAmount,
-      cleaningFee: listing.cleaningFee || 0,
-      serviceFee: listing.serviceFee || 0,
-      occupancyTaxes: listing.occupancyTaxes || 0,
-      totalCost: Math.round(totalCost * 100) / 100,
-      listingTitle: listing.title,
+      pricePerNight  : listing.price,
+      weeklyDiscount : discountAmount,
+      cleaningFee    : listing.cleaningFee    || 0,
+      serviceFee     : listing.serviceFee     || 0,
+      occupancyTaxes : listing.occupancyTaxes || 0,
+      totalCost,
+      listingTitle   : listing.title,
       listingLocation: listing.location,
-      listingImage: listing.images[0] || '',
-    });
+      listingImage   : listing.images && listing.images[0] ? listing.images[0] : '',
+    };
 
-    res.status(201).json({ message: 'Reservation created successfully', reservation });
+    // Only set host_id if the listing actually has one (seeded listings may not)
+    if (listing.host_id) {
+      reservationData.host_id = listing.host_id;
+    }
+
+    const reservation = await Reservation.create(reservationData);
+
+    return res.status(201).json({ message: 'Reservation created successfully', reservation });
+
   } catch (err) {
+    // Mongoose validation errors
     if (err.name === 'ValidationError') {
       const messages = Object.values(err.errors).map((e) => e.message);
       return res.status(400).json({ message: messages.join(', ') });
     }
-    res.status(500).json({ message: 'Error creating reservation', error: err.message });
+    // Mongoose bad ObjectId
+    if (err.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid accommodation ID format' });
+    }
+    console.error('Reservation create error:', err);
+    return res.status(500).json({ message: 'Error creating reservation', error: err.message });
   }
 };
 
 // ─── GET /api/reservations/host ───────────────────────────────────────────────
-/**
- * Get all reservations for listings owned by the authenticated host.
- * Requires authentication (host or admin role).
- */
 const getReservationsByHost = async (req, res) => {
   try {
     const reservations = await Reservation.find({ host_id: req.user._id })
@@ -104,33 +120,26 @@ const getReservationsByHost = async (req, res) => {
       .populate('user', 'username email')
       .sort({ createdAt: -1 });
 
-    res.status(200).json(reservations);
+    return res.status(200).json(reservations);
   } catch (err) {
-    res.status(500).json({ message: 'Error fetching host reservations', error: err.message });
+    return res.status(500).json({ message: 'Error fetching host reservations', error: err.message });
   }
 };
 
 // ─── GET /api/reservations/user ───────────────────────────────────────────────
-/**
- * Get all reservations made by the authenticated user.
- * Requires authentication.
- */
 const getReservationsByUser = async (req, res) => {
   try {
     const reservations = await Reservation.find({ user: req.user._id })
       .populate('accommodation', 'title location images price rating')
       .sort({ createdAt: -1 });
 
-    res.status(200).json(reservations);
+    return res.status(200).json(reservations);
   } catch (err) {
-    res.status(500).json({ message: 'Error fetching user reservations', error: err.message });
+    return res.status(500).json({ message: 'Error fetching user reservations', error: err.message });
   }
 };
 
 // ─── GET /api/reservations ────────────────────────────────────────────────────
-/**
- * Get all reservations (admin only).
- */
 const getAllReservations = async (req, res) => {
   try {
     const reservations = await Reservation.find({})
@@ -138,18 +147,13 @@ const getAllReservations = async (req, res) => {
       .populate('user', 'username email')
       .sort({ createdAt: -1 });
 
-    res.status(200).json(reservations);
+    return res.status(200).json(reservations);
   } catch (err) {
-    res.status(500).json({ message: 'Error fetching reservations', error: err.message });
+    return res.status(500).json({ message: 'Error fetching reservations', error: err.message });
   }
 };
 
-// ─── DELETE /api/reservations/:id ────────────────────────────────────────────
-/**
- * Cancel/delete a reservation by ID.
- * Only the guest who made the reservation or an admin can delete it.
- * Requires authentication.
- */
+// ─── DELETE /api/reservations/:id ─────────────────────────────────────────────
 const deleteReservation = async (req, res) => {
   try {
     const reservation = await Reservation.findById(req.params.id);
@@ -158,7 +162,6 @@ const deleteReservation = async (req, res) => {
       return res.status(404).json({ message: 'Reservation not found' });
     }
 
-    // Allow only the guest or admin to delete
     const isOwner = reservation.user.toString() === req.user._id.toString();
     const isAdmin = req.user.role === 'admin';
 
@@ -167,13 +170,13 @@ const deleteReservation = async (req, res) => {
     }
 
     await reservation.deleteOne();
+    return res.status(200).json({ message: 'Reservation cancelled successfully' });
 
-    res.status(200).json({ message: 'Reservation cancelled successfully' });
   } catch (err) {
     if (err.name === 'CastError') {
       return res.status(400).json({ message: 'Invalid reservation ID' });
     }
-    res.status(500).json({ message: 'Error deleting reservation', error: err.message });
+    return res.status(500).json({ message: 'Error deleting reservation', error: err.message });
   }
 };
 
