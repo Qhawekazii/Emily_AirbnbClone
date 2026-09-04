@@ -49,15 +49,18 @@ app.use('/api/users', userRoutes);
 if (process.env.NODE_ENV === 'production') {
   // Serve admin frontend static files at /admin
   app.use('/admin', express.static(path.join(__dirname, 'admin-frontend/dist')));
+
   app.get('/admin/*splat', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin-frontend/dist/index.html'));
   });
 
   // Serve public Airbnb frontend static files at /
   app.use(express.static(path.join(__dirname, 'airbnb-frontend/dist')));
-  app.get('*', (req, res) => {
+
+  app.get('/{*splat}', (req, res) => {
     res.sendFile(path.join(__dirname, 'airbnb-frontend/dist/index.html'));
   });
+}
 } else {
   // Development: health check at root
   app.get('/', (req, res) => {
