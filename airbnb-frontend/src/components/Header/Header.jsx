@@ -7,6 +7,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import LoginModal from '../LoginModal/LoginModal';
+import { Search, MapPin, Menu, User, ChevronRight } from '../Icons';
 import './Header.css';
 
 const LOCATIONS = ['New York', 'Paris', 'Cape Town', 'Tokyo', 'London', 'Bali'];
@@ -67,7 +68,7 @@ const Header = ({ transparent = false }) => {
           <div className="header-search" ref={searchRef}>
             <form onSubmit={handleSearchSubmit} role="search" aria-label="Search locations">
               <div className="search-bar">
-                <span className="search-icon" aria-hidden="true">🔍</span>
+                <Search className="search-icon" size={16} />
                 <input
                   type="text"
                   placeholder="Search destinations..."
@@ -80,7 +81,7 @@ const Header = ({ transparent = false }) => {
                   aria-expanded={showSuggestions}
                 />
                 <button type="submit" className="search-btn" aria-label="Search">
-                  <span aria-hidden="true">→</span>
+                  <ChevronRight size={16} />
                 </button>
               </div>
             </form>
@@ -95,7 +96,7 @@ const Header = ({ transparent = false }) => {
                     onClick={() => handleSearch(loc)}
                     className="suggestion-item"
                   >
-                    <span className="suggestion-icon" aria-hidden="true">📍</span>
+                    <MapPin className="suggestion-icon" size={16} />
                     {loc}
                   </li>
                 ))}
@@ -119,9 +120,9 @@ const Header = ({ transparent = false }) => {
                 aria-haspopup="menu"
                 aria-label="User menu"
               >
-                <span className="hamburger" aria-hidden="true">☰</span>
+                <Menu className="hamburger" size={18} />
                 <span className="profile-avatar" aria-hidden="true">
-                  {user ? user.username.charAt(0).toUpperCase() : '👤'}
+                  {user ? user.username.charAt(0).toUpperCase() : <User size={16} />}
                 </span>
               </button>
 
