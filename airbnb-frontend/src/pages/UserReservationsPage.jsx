@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header/Header';
 import Footer from '../components/Footer/Footer';
+import { Calendar, MapPin, Users } from '../components/Icons';
 import api from '../api/axios';
 import './UserReservationsPage.css';
 
@@ -65,7 +66,7 @@ const UserReservationsPage = () => {
           <div className="spinner-wrap"><div className="spinner" /></div>
         ) : reservations.length === 0 ? (
           <div className="res-empty">
-            <div className="res-empty-icon">✈️</div>
+            <div className="res-empty-icon"><Calendar size={42} /></div>
             <h3>No trips booked yet</h3>
             <p>Time to dust off your bags and explore!</p>
             <button className="btn btn-primary" onClick={() => navigate('/')}>Start exploring</button>
@@ -84,11 +85,11 @@ const UserReservationsPage = () => {
                 <div className="res-card-body">
                   <div className="res-card-type">Entire stay</div>
                   <h3>{r.listingTitle || r.accommodation?.title}</h3>
-                  <p className="res-card-location">📍 {r.listingLocation || r.accommodation?.location}</p>
+                  <p className="res-card-location"><MapPin size={14} /> {r.listingLocation || r.accommodation?.location}</p>
                   <div className="res-card-dates">
-                    <span>📅 {fmt(r.checkIn)} → {fmt(r.checkOut)}</span>
+                    <span><Calendar size={14} /> {fmt(r.checkIn)} → {fmt(r.checkOut)}</span>
                     <span>· {r.nights} night{r.nights !== 1 ? 's' : ''}</span>
-                    <span>· 👥 {r.guests} guest{r.guests !== 1 ? 's' : ''}</span>
+                    <span>· <Users size={14} /> {r.guests} guest{r.guests !== 1 ? 's' : ''}</span>
                   </div>
                   <div className="res-card-footer">
                     <span className="res-card-total">Total: <strong>${r.totalCost?.toFixed(2)}</strong></span>
