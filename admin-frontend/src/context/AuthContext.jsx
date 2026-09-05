@@ -38,11 +38,16 @@ export const AuthProvider = ({ children }) => {
 
 
   const login = (userData, jwtToken) => {
-    setUser(userData);
-    setToken(jwtToken);
-    localStorage.setItem('adminUser', JSON.stringify(userData));
-    localStorage.setItem('adminToken', jwtToken);
-  };
+  if (!userData || !jwtToken) {
+    throw new Error('Login response did not contain user or token');
+  }
+
+  setUser(userData);
+  setToken(jwtToken);
+
+  localStorage.setItem('adminUser', JSON.stringify(userData));
+  localStorage.setItem('adminToken', jwtToken);
+};
 
   const logout = () => {
     setUser(null);
