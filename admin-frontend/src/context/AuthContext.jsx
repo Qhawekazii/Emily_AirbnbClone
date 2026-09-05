@@ -15,14 +15,27 @@ export const AuthProvider = ({ children }) => {
 
   // Restore session from localStorage on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('adminUser');
-    const storedToken = localStorage.getItem('adminToken');
-    if (storedUser && storedToken) {
+  const storedUser = localStorage.getItem('adminUser');
+  const storedToken = localStorage.getItem('adminToken');
+
+  try {
+    if (storedUser && storedToken && storedUser !== 'undefined') {
       setUser(JSON.parse(storedUser));
       setToken(storedToken);
+    } else {
+      localStorage.removeItem('adminUser');
+      localStorage.removeItem('adminToken');
     }
-    setLoading(false);
-  }, []);
+  } catch (error) {
+    console.error('Failed to restore admin session:', error);
+
+    localStorage.removeItem('adminUser');
+    localStorage.removeItem('adminToken');
+  }
+
+  setLoading(false);
+}, []);
+
 
   const login = (userData, jwtToken) => {
     setUser(userData);
