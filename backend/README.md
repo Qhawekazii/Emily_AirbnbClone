@@ -53,13 +53,9 @@ cd admin-frontend && npm run dev
 cd airbnb-frontend && npm run dev
 ```
 
-## Test Credentials
+## Test accounts
 
-| Role  | Email | Password |
-|-------|-------|----------|
-| Admin | admin@airbnb.com | admin123 |
-| Host  | jane@example.com | password321 |
-| User  | john@example.com | password123 |
+`npm run seed` creates sample guest, host and admin accounts for **local development only**. Their logins are printed in your terminal when the seed runs. Never run the seed against a live database.
 
 ## Tech Stack
 
