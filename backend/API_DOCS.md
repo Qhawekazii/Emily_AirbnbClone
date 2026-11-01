@@ -16,7 +16,7 @@ Register a new user.
 
 **Body:**
 ```json
-{ "username": "John Doe", "email": "john@example.com", "password": "password123", "role": "user" }
+{ "username": "John Doe", "email": "john@example.com", "password": "your-password", "role": "user" }
 ```
 **Response:** `201` — `{ user, token }`
 
@@ -27,7 +27,7 @@ Log in an existing user.
 
 **Body:**
 ```json
-{ "email": "john@example.com", "password": "password123" }
+{ "email": "john@example.com", "password": "your-password" }
 ```
 **Response:** `200` — `{ user, token }`
 
