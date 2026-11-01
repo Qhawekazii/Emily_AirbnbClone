@@ -5,7 +5,6 @@ A full-stack booking platform: guests browse places to stay and reserve dates, a
 | | Link |
 |---|---|
 | 🏠 **Guest site** | [emily-airbnbclone.onrender.com](https://emily-airbnbclone.onrender.com/) |
-| 🛠️ **Host / admin dashboard** | [emily-airbnbclone-admin.onrender.com](https://emily-airbnbclone-admin.onrender.com/) |
 | 📄 **Case study** | [The problem, decisions and what I'd improve](https://github.com/Qhawekazii/Qhawekazii/blob/main/case-studies/airbnb-clone.md) |
 | 📚 **API docs** | [backend/API_DOCS.md](backend/API_DOCS.md) |
 
